@@ -12,6 +12,8 @@ _dvm_usage() {
   echo "Commands:"
   echo "   alias      Manage Dart version aliases"
   echo "   help       Display usage"
+  echo "   stable     Install latest stable and use by default"
+  echo "   dev        Install latest dev and use by default"
   echo "   implode    Delete dvm and all installed Dart versions"
   echo "   install    Install a Dart version"
   echo "   list       List installed Dart versions"
@@ -387,32 +389,32 @@ _dvm_install() {
     fi
 
     # Download Dartium.
-    for channel in "stable" "beta" "dev"; do
-      _dvm_download_dartium "$channel" "$version" "$dartium_archive" && break
-    done
-    if [[ $? -ne 0 ]]; then
-      echo "ERROR: unable to download Dartium. But hey, at least you got the SDK."
-    else
-      unzip $dartium_archive
-      if [[ ! -d "$DVM_ROOT/darts/$version/dartium" ]]; then
-        local dartium_dir="$(find . -maxdepth 1 ! -path . -type d)"
-        mv "$dartium_dir" "$DVM_ROOT/darts/$version/dartium"
-      fi
-
-      # Create Dartium symlink.
-      pushd "$DVM_ROOT/darts/$version/bin" > /dev/null
-      case $(uname) in
-        Darwin)
-          echo "#!/bin/bash" > dartium
-          echo "open \"$DVM_ROOT/darts/$version/dartium/Chromium.app\"" >> dartium
-          chmod ugo+x dartium
-          ;;
-        Linux)
-          ln -s ../dartium/chrome dartium
-          ;;
-      esac
-      popd > /dev/null
-    fi
+    # for channel in "stable" "beta" "dev"; do
+    #   _dvm_download_dartium "$channel" "$version" "$dartium_archive" && break
+    # done
+    # if [[ $? -ne 0 ]]; then
+    #   echo "ERROR: unable to download Dartium. But hey, at least you got the SDK."
+    # else
+    #   unzip $dartium_archive
+    #   if [[ ! -d "$DVM_ROOT/darts/$version/dartium" ]]; then
+    #     local dartium_dir="$(find . -maxdepth 1 ! -path . -type d)"
+    #     mv "$dartium_dir" "$DVM_ROOT/darts/$version/dartium"
+    #   fi
+    #
+    #   # Create Dartium symlink.
+    #   pushd "$DVM_ROOT/darts/$version/bin" > /dev/null
+    #   case $(uname) in
+    #     Darwin)
+    #       echo "#!/bin/bash" > dartium
+    #       echo "open \"$DVM_ROOT/darts/$version/dartium/Chromium.app\"" >> dartium
+    #       chmod ugo+x dartium
+    #       ;;
+    #     Linux)
+    #       ln -s ../dartium/chrome dartium
+    #       ;;
+    #   esac
+    #   popd > /dev/null
+    # fi
   fi
 
   # Clean up.
@@ -471,6 +473,42 @@ _dvm_version() {
   echo "Dart Version Manager version $DVM_VERSION installed at $DVM_ROOT"
 }
 
+_dvm_stable() {
+  LATEST=$(dvm listall | tail -n 2 | head -n 1)
+  if dvm list | grep "^$LATEST\$" > /dev/null ; then
+    echo "Dart SDK: $LATEST is already installed"
+  else
+    echo "Installing: $LATEST"
+    dvm install "$LATEST"
+  fi
+  echo -n "Use as default? "
+  read yn
+  yn=$(tr '[:upper:]' '[:lower:]' <<< "$yn")
+  if [[ "$yn" == "y" || "$yn" == "yes" ]]; then
+    dvm use --default "$LATEST"
+  else
+    dvm use "$LATEST"
+  fi
+}
+
+_dvm_dev() {
+  LATEST=$(dvm listall --dev | tail -n 2 | head -n 1)
+  if dvm list | grep "^$LATEST\$" > /dev/null ; then
+    echo "Dart SDK: $LATEST is already installed"
+  else
+    echo "Installing: $LATEST"
+    dvm install "$LATEST"
+  fi
+  echo -n "Use as default? "
+  read yn
+  yn=$(tr '[:upper:]' '[:lower:]' <<< "$yn")
+  if [[ "$yn" == "y" || "$yn" == "yes" ]]; then
+    dvm use --default "$LATEST"
+  else
+    dvm use "$LATEST"
+  fi
+}
+
 _dvm_implode() {
   echo "This will delete dvm and all installed versions."
   echo -n "Are you sure? "
@@ -511,6 +549,12 @@ dvm() {
   case $cmd in
     alias)
       _dvm_alias "$@"
+      ;;
+    stable)
+      _dvm_stable "$@"
+      ;;
+    dev)
+      _dvm_dev "$@"
       ;;
     implode)
       _dvm_implode "$@"

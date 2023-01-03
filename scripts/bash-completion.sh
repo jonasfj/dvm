@@ -7,7 +7,7 @@ _dvm_completions() {
     return
   fi
   if [[ "$COMP_CWORD" == 1 ]]; then
-    COMPREPLY=($(compgen -W "alias implode install list listall upgrade use version" -- "$CURRENT_WORD"))
+    COMPREPLY=($(compgen -W "alias stable dev implode install list listall upgrade use version" -- "$CURRENT_WORD"))
     return
   fi
   
@@ -19,6 +19,14 @@ _dvm_completions() {
       fi
       ;;
     
+    # dvm stable
+    stable)
+      ;;
+
+    # dvm dev
+    dev)
+      ;;
+
     # dvm implode
     implode)
       ;;
